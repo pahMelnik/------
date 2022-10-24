@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from typing import NoReturn
 
 
@@ -33,14 +34,14 @@ def datetime_to_om_time(series: pd.Series, format: str = 'Months') -> pd.Series:
 
 def dataframes_to_om_csv(dfs: list,
                          path: str,
-                         keep_only: list = None,
+                         colunms: list = None,
                          time_column: str = None,
                          datetime_column: str = 'datetime',
                          time_format: str = 'Months',
                          reset_index: bool = True,
                          encoding: str = 'utf-8',
                          sep: str = ';') -> NoReturn:
-    if reset_index  == True:
+    if reset_index  == False:
         output = pd.concat(
             map(lambda df: df.reset_index(), dfs), ignore_index=True)
     else :
@@ -50,8 +51,8 @@ def dataframes_to_om_csv(dfs: list,
         output[time_column] = datetime_to_om_time(
             output[datetime_column], format=time_format)
 
-    if keep_only is not None:
-        output = output.loc[:, keep_only]
+    if colunms is not None:
+        output = output.loc[:, colunms]
 
     output.to_csv(path, sep=sep, encoding=encoding, index=False)
 
@@ -76,13 +77,15 @@ def excel_to_dataframe(filename: str) -> pd.DataFrame:
     df = df.reset_index(drop=True)
     return df
 
+
 def file_to_dataframe(file_path: str,
                       file_type: str,
                       sep: str = ";",
                       encoding: str = "UTF 8",
                       columns: list[str] = None,
                       invert_columns: bool = False,
-                      index_column: str = None) -> pd.DataFrame:
+                      index_column: str = None,
+                      columns_to_convert: dict = None) -> pd.DataFrame:
     """
         Function for convert files to DataFrame, where dimension and cubes in columns.
         Work whis multicubes, where all dimensions in rows and cubes in columns.
@@ -95,16 +98,19 @@ def file_to_dataframe(file_path: str,
         df = excel_to_dataframe(filename=file_path)
     else:
         raise ValueError(f"Unsupport file extension: {file_type}")
-    if index_column != None:
-        df.set_index(index_column)
     if columns != None:
         columns_list = columns
         if invert_columns == True:
             columns_list = []
-            for i in df.columns().to_list():
+            for i in df.columns.to_list():
                 if i not in columns:
                     columns_list.append(i)
         df = df[columns_list]
+    if columns_to_convert != None:
+        for type in columns_to_convert.keys():
+            df = convert_columns(df, columns_to_convert[type], type)
+    if index_column != None:
+        df = df.set_index(index_column)
     return df
 
 
@@ -112,9 +118,9 @@ def convert_num_om_to_pandas(series: pd.Series) -> pd.Series:
     if type(series.loc[0]) == str :
         series = series.replace(to_replace= r",",value= ".", regex=True)
         if "." in series.loc[0]:
-            series = series.apply(float)
-    else:
-        series = series.apply(int)
+            series = series.apply(np.float64)
+        else:
+            series = series.apply(np.int64)
     return series
 
 
@@ -122,8 +128,8 @@ def convert_boolean_om_to_pandas(series: pd.Series) -> pd.Series:
     if type(series.loc[0]) == str :
         series = series.apply(lambda x: True if x == 'true' else False)
 
-    elif type(series.loc[0]) == int:
-        series= series.apply(bool)
+    elif type(series[0]) == np.int64:
+        series = series.apply(bool)
     return series
 
 
