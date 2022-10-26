@@ -114,15 +114,17 @@ def file_to_dataframe(file_path: str,
     return df
 
 
-def convert_num_om_to_pandas(series: pd.Series) -> pd.Series:
-    if type(series.loc[0]) == str :
-        series = series.replace(to_replace= r",",value= ".", regex=True)
-        if "." in series.loc[0]:
-            series = series.apply(np.float64)
-        else:
-            series = series.apply(np.int64)
+def convert_int_om_to_pandas(series: pd.Series) -> pd.Series:
+    series = series.replace(to_replace= r",",value= ".", regex=True)
+    series = series.apply(np.float64)
+    series = series.apply(np.rint)
+    series = series.apply(np.int64)
     return series
 
+def convert_float_om_to_pandas(series: pd.Series) -> pd.Series:
+    series = series.replace(to_replace= r",",value= ".", regex=True)
+    series = series.apply(np.float64)
+    return series
 
 def convert_boolean_om_to_pandas(series: pd.Series) -> pd.Series:
     if type(series.loc[0]) == str :
@@ -134,10 +136,14 @@ def convert_boolean_om_to_pandas(series: pd.Series) -> pd.Series:
 
 
 def convert_columns(df: pd.DataFrame, columns: list[str], data_type: str) -> pd.DataFrame:
-    if data_type == 'num':
+    if data_type == 'int':
         for i in columns:
-            df[i] = convert_num_om_to_pandas(df[i])
+            df[i] = convert_int_om_to_pandas(df[i])
 
+    elif data_type == 'float':
+        for i in columns:
+            df[i] = convert_float_om_to_pandas(df[i])
+    
     elif data_type == 'bool':
         for i in columns:
             df[i] = convert_boolean_om_to_pandas(df[i])
