@@ -22,6 +22,7 @@ def om_time_to_datetime(series: pd.Series) -> pd.Series:
 
 
 def datetime_to_om_time(series: pd.Series, format: str = 'Months') -> pd.Series:
+    series = pd.to_datetime(series, format='%Y-%m-%d')
     if format == 'Years':
         return 'FY' + series.dt.strftime('%y')
     elif format == 'Months':
