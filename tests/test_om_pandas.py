@@ -7,90 +7,21 @@ import pytest
 import random
 import hashlib
 import csv
-
-class generate():
-    
-    def om_time_to_date_time_test_data(min_Year: int = 2010, max_Year: int = 2020, max_Months: int = 12, max_Day: int = 28):
-        MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        MONTHS = MONTHS[:max_Months+1]
-        OM_MIN_YEAR = int(str(min_Year)[2:])
-        OM_MAX_YEAR = int(str(max_Year)[2:])
-        om_time_to_datetime_input_list = ["FY"+ str(i) for i in range(OM_MIN_YEAR,OM_MAX_YEAR+1)]
-        om_time_to_datetime_input_list += [i+ ' ' + str(OM_MAX_YEAR) for i in MONTHS]
-        om_time_to_datetime_input_list += [str(i) + ' ' + MONTHS[-1] + ' ' + str(OM_MAX_YEAR) for i in range(1,max_Day+1)]
-        
-        om_time_to_datetime_result_list = [str(datetime.date(i, 1, 1))  for i in range(min_Year,max_Year+1)]
-        om_time_to_datetime_result_list += [str(datetime.date(max_Year, i, 1)) for i in range (1,max_Months+1)]
-        om_time_to_datetime_result_list += [str(datetime.date(max_Year, max_Months, i)) for i in range(1,max_Day+1)]
-        
-        test_data = [tuple([pd.Series([om_time_to_datetime_input_list[i]]),pd.Series([om_time_to_datetime_result_list[i]])]) for i in range(len(om_time_to_datetime_input_list))]
-        return test_data
-    
-    
-    def date_time_to_om_time_test_data(min_Year: int = 2010, max_Year: int = 2020, max_Months: int = 12, max_Day: int = 28):
-        MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        MONTHS = MONTHS[:max_Months+1]
-        OM_MIN_YEAR = int(str(min_Year)[2:])
-        OM_MAX_YEAR = int(str(max_Year)[2:])
-        om_time_to_datetime_input_list = [pd.to_datetime(pd.Series(datetime.date(i, 1, 1)), errors='coerce') for i in range(min_Year,max_Year+1)]
-        format = ["Years" for i in range(len(om_time_to_datetime_input_list))]
-        
-        om_time_to_datetime_input_list += [pd.to_datetime(pd.Series(datetime.date(max_Year, i, 1)), errors='coerce') for i in range (1,max_Months+1)]
-        format += ["Months" for i in range(len(om_time_to_datetime_input_list)-len(format))]
-        
-        om_time_to_datetime_input_list += [pd.to_datetime(pd.Series(datetime.date(max_Year, max_Months, i)), errors='coerce') for i in range(1,max_Day+1)]
-        format += ["Days" for i in range(len(om_time_to_datetime_input_list)-len(format))]
-        
-        
-        om_time_to_datetime_result_list = [pd.Series("FY"+ str(i)) for i in range(OM_MIN_YEAR,OM_MAX_YEAR+1)]
-        om_time_to_datetime_result_list += [pd.Series(i+ ' ' + str(OM_MAX_YEAR)) for i in MONTHS]
-        om_time_to_datetime_result_list += [pd.Series(str(i) + ' ' + MONTHS[-1] + ' ' + str(OM_MAX_YEAR)) for i in range(1,max_Day+1)]
-        
-        
-        test_data = [tuple([om_time_to_datetime_input_list[i], om_time_to_datetime_result_list[i], format[i]]) for i in range(len(om_time_to_datetime_input_list))]
-        return test_data
-
-    
-    def csv_to_dataframe_test_data(path: list[str], expected_result_path: list[str]):
-        test_data = [tuple([i, pd.read_pickle(k)]) for i, k in zip(path, expected_result_path)]
-        return test_data
-    
-    
-    def excel_to_dataframe_test_data(path: list[str], expected_result_path: list[str]):
-        test_data = [tuple([i, pd.read_pickle(k)]) for i, k in zip(path, expected_result_path)]
-        return test_data
-
-
-    def file_to_dataframe_test_data(path: list[str], file_type: list[str],expected_result_path: list[str]):
-        test_data = [tuple([i, pd.read_pickle(k)]) for i, k in zip(path, file_type, expected_result_path)]
-        return test_data
-    
-    def convert_num_om_to_pandas_test_data(tests_count: int):
-        test_data = []
-        delimiter = [",","."]
-        for i in range(tests_count):
-            test_value = f"{random.randint(0,10)}{random.choice(delimiter)}{random.randint(0,1000)}"
-            test_data.append((pd.Series(test_value), pd.Series(float(test_value.replace(",",".")))))
-        return test_data
-    
-    def convert_boolean_om_to_pandas_test_data(tests_count: int):
-        test_data = []
-        seq = [0,1, "true", "false"]
-        except_seq = [False, True, True, False]
-        for i in range(tests_count):
-            index = random.randint(0,3)
-            test_data.append((pd.Series(seq[index]), pd.Series(except_seq[index])))
-        return test_data
+import numpy as np
 
 
 @pytest.mark.parametrize("om_time, expected_result",
-                         generate.om_time_to_date_time_test_data())
+                         [(pd.Series('FY22'), pd.Series(datetime.date(2022,1,1))),
+                          (pd.Series('Jan 22'), pd.Series(datetime.date(2022,1,1))),
+                          (pd.Series('31 Dec 22'), pd.Series(datetime.date(2022,12,31)))])
 def test_om_time_to_datetime(om_time: pd.Series, expected_result: pd.Series):
     assert all(om_time_to_datetime(om_time) == expected_result)
 
 
 @pytest.mark.parametrize("date_time, expected_result, format",
-                         generate.date_time_to_om_time_test_data())
+                         [(pd.Series(datetime.date(2022,1,1)), pd.Series('FY22'), 'Years'),
+                          (pd.Series(datetime.date(2022,1,1)), pd.Series('Jan 22'), 'Months'),
+                          (pd.Series(datetime.date(2022,12,31)), pd.Series('31 Dec 22'), 'Days')])
 def test_datetime_to_om_time(date_time: pd.Series, expected_result: pd.Series, format: str):
     assert all(datetime_to_om_time(date_time, format) == expected_result)
     
@@ -120,7 +51,7 @@ def test_excel_to_dataframe(path: str, expected_result: str):
                            "om_csv", ";" ,"Windows 1251", None, False, None),
                           ("tests/test_data/txt.txt", 
                            "tests/test_data/expected_txt.pkl",
-                           "txt", ";" ,"Windows 1251", None, False, None),
+                           "txt", ";" ,"UTF 8", None, False, None),
                           ("tests/test_data/om_txt.txt", 
                            "tests/test_data/expected_om_txt.pkl",
                            "om_txt", ";" ,"Windows 1251", None, False, None)])  
@@ -142,13 +73,28 @@ def test_file_to_dataframe(file_path: str,
                                  index_column = index_column) == pd.read_pickle(expected_result))
     
 @pytest.mark.parametrize("data, expected_result",
-                         generate.convert_num_om_to_pandas_test_data(10))
-def test_convert_num_om_to_pandas(data: pd.Series, expected_result: pd.Series):
-    assert all(convert_num_om_to_pandas(data) == expected_result)
+                         [((pd.Series(1)), pd.Series(np.int64(1))),
+                          ((pd.Series('1')), pd.Series(np.int64(1))),
+                          ((pd.Series(9999999999)), pd.Series(np.int64(9999999999))),
+                          ((pd.Series(1.1)), pd.Series(np.int64(1)))])
+def test_convert_int_om_to_pandas(data: pd.Series, expected_result: pd.Series):
+    assert all(convert_int_om_to_pandas(data) == expected_result)
     
 
 @pytest.mark.parametrize("data, expected_result",
-                         generate.convert_boolean_om_to_pandas_test_data(10))
+                         [((pd.Series(1)), pd.Series(np.float64(1))),
+                          ((pd.Series('1')), pd.Series(np.float64(1))),
+                          ((pd.Series(0.009999999999)), pd.Series(np.float64(0.009999999999))),
+                          ((pd.Series(1.1)), pd.Series(np.float64(1.1)))])
+def test_convert_float_om_to_pandas(data: pd.Series, expected_result: pd.Series):
+    assert all(convert_float_om_to_pandas(data) == expected_result)
+
+
+@pytest.mark.parametrize("data, expected_result",
+                         [(pd.Series(1), pd.Series(True)),
+                          (pd.Series(0), pd.Series(False)),
+                          (pd.Series('true'), pd.Series(True)),
+                          (pd.Series('false'), pd.Series(False))])
 def test_convert_boolean_om_to_pandas(data: pd.Series, expected_result: pd.Series):
     assert all(convert_boolean_om_to_pandas(data) == expected_result)
     
@@ -229,7 +175,7 @@ def test_dataframe_to_list(test_data : pd.DataFrame, columns : list[str], invert
                                  None,
                                  None,
                                  None,
-                                 True,
+                                 False,
                                  "utf-8",
                                  ";",
                                  "tests/test_data/test_output_None_None_None_None_True_utf-8_;.csv"
@@ -246,7 +192,6 @@ def test_dataframes_to_om_csv(dfs: list,
                          encoding: str,
                          sep: str,
                          expected_result_path: str):
-  
     dataframes_to_om_csv(dfs, path, keep_only, time_column, datetime_column, time_format, reset_index, encoding, sep)
     with open(path, 'r') as result, open(expected_result_path, 'r') as expected_result:
         result_list = list(csv.DictReader(result))
@@ -268,7 +213,7 @@ def test_dataframes_to_om_csv(dfs: list,
                                  None,
                                  None,
                                  None,
-                                 True,
+                                 False,
                                  "utf-8",
                                  ";",
                                  "tests/test_data/test_output_None_None_None_None_True_utf-8_;.csv"
