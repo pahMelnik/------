@@ -8,5 +8,6 @@
         "--follow-imports=silent",
         "--ignore-missing-imports",
         "--show-column-numbers"
-    ]
+    ],
+    "python.analysis.typeCheckingMode": "basic"
 }
