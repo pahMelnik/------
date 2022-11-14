@@ -35,13 +35,13 @@ def datetime_to_om_time(series: pd.Series, format: str = 'Months') -> pd.Series:
 
 def dataframes_to_om_csv(dfs: list,
                          path: str,
-                         colunms: list = None,
-                         time_column: str = None,
+                         colunms: list = None,  # type: ignore
+                         time_column: str = None,  # type: ignore
                          datetime_column: str = 'datetime',
                          time_format: str = 'Months',
                          reset_index: bool = True,
                          encoding: str = 'utf-8',
-                         sep: str = ';') -> NoReturn:
+                         sep: str = ';') -> NoReturn:  # type: ignore
     if reset_index  == False:
         output = pd.concat(
             map(lambda df: df.reset_index(), dfs), ignore_index=True)
@@ -83,10 +83,10 @@ def file_to_dataframe(file_path: str,
                       file_type: str,
                       sep: str = ";",
                       encoding: str = "UTF 8",
-                      columns: list[str] = None,
+                      columns: list[str] = None,  # type: ignore
                       invert_columns: bool = False,
-                      index_column: str = None,
-                      columns_to_convert: dict = None) -> pd.DataFrame:
+                      index_column: str = None,  # type: ignore
+                      columns_to_convert: dict = None) -> pd.DataFrame:  # type: ignore
     """
         Function for convert files to DataFrame, where dimension and cubes in columns.
         Work whis multicubes, where all dimensions in rows and cubes in columns.
