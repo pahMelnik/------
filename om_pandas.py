@@ -4,7 +4,14 @@ from typing import NoReturn
 
 
 
-def om_time_to_datetime(series: pd.Series) -> pd.Series:
+def om_time_to_datetime(series: pd.Series, start_weekday: str = 'Monday', max_days_in_W0: int = 6) -> pd.Series:
+    """Функция для конвертации дат формата ОМ в datetime.
+
+    Args:
+        series (pd.Series): Серия с датой в формате OM.
+        start_weekday (str, optional): Название перого дня недели. По умолчанию 'Monday'.
+        max_days_in_W0 (int, optional): Количество дней в неполной нулевой неделе, принимает значения от 0 до 6. По умолчанию 6.
+    """
     date_example = series.iloc[0]
 
     if len(date_example) == 4:
@@ -13,20 +20,84 @@ def om_time_to_datetime(series: pd.Series) -> pd.Series:
     elif len(date_example) == 6:
         # month and year
         return pd.to_datetime(series, format='%b %y')
+    elif date_example[0] == "W":
+        # week and year
+        if max_days_in_W0 > 6:
+            raise ValueError(f"Argument max_days_in_W0 can`t be more 6. Your value is {max_days_in_W0}.")
+        weekday_mapping = {'Monday': 1,
+                        'Tuesday': 2,
+                        'Wednesday': 3,
+                        'Thursday': 4,
+                        'Friday': 5,
+                        'Saturday': 6,
+                        'Sunday': 0}
+        df_convert_week = pd.DataFrame()
+        df_convert_week['om_week'] = series
+        df_convert_week['Year'] = df_convert_week['om_week'].apply(lambda x: x[-2:])
+        
+        # Определение коичества дней в нелоных неделях по годам
+        first_weeks = pd.DataFrame()
+        first_weeks['date'] = pd.Series([datetime.datetime.strptime(f"{day} {year}", "%d %y") for year in df_convert_week['Year'].unique() for day in range(1,8)])
+        first_weeks['om_week'] = datetime_to_om_time(first_week['date'], "Weeks", start_weekday, max_days_in_W0)
+        first_weeks['Year'] = first_week['om_week'].apply(lambda x : x[-2:])
+        first_weeks['count_W0'] = first_week['om_week'].apply(lambda x : 1 if x[:2] == "W0" else 0)
+        W0 = first_week.groupby('Year').sum()
+        df_convert_week['count_W0'] = df_convert_week['om_week'].apply(lambda x : W0.loc[x[-2:], 'count_W0'])
+        
+        df_convert_week['first_start_weekday'] = str(weekday_mapping[start_weekday]) + " 01 " + df_convert_week['om_week'].apply(lambda x : x[-2:])
+        df_convert_week['first_start_weekday_dt'] = pd.to_datetime(df_convert_week['first_start_weekday'], format="%w %W %y")
+        df_convert_week['offset'] = df_convert_week['first_start_weekday_dt'].dt.strftime("%d").apply(lambda x : int(x) if int(x)<7 else int(x)-7)
+        df_convert_week['count_W0-om_week'] = df_convert_week['count_W0'].apply(str) + "-" + df_convert_week['om_week']
+        df_convert_week['day_num_1'] = df_convert_week['count_W0-om_week'].apply(lambda x : int(x[3:][:-3])*7 if int(x[0]) < max_days_in_W0 else (int(x[3:][:-3])-1)*7) + df_convert_week['offset']
+        df_convert_week['offset-day_num_1'] = df_convert_week['offset'].apply(str) + "-" + df_convert_week['day_num_1'].apply(str)
+        df_convert_week['day_num'] = df_convert_week['offset-day_num_1'].apply(lambda x : int(x[2:]) if int(x[:1]) == 0 and int(x[2:]) - 7 >= 0 else 1 if int(x[2:]) - 7 < 1 else int(x[2:])-7)
+        df_convert_week['day year'] = df_convert_week['day_num'].apply(str) + " " + df_convert_week['om_week'].apply(lambda x : x[-2:])
+        df_convert_week['date'] = pd.to_datetime(df_convert_week['day year'], format = "%d %y")
+        return df_convert_week['date']
     elif len(date_example) >= 8 and len(date_example) <= 9:
         # day, month and year
         return pd.to_datetime(series, format='%d %b %y')
-    else:
+    else: 
         raise ValueError(
             f"Can't convert date of unsupported fromat {date_example} from Optimacros format to pandas datetime")
 
 
-def datetime_to_om_time(series: pd.Series, format: str = 'Months') -> pd.Series:
+def datetime_to_om_time(series: pd.Series, format: str = 'Months', start_weekday: str = 'Monday', max_days_in_W0: int = 6) -> pd.Series:
+    """Функция для конвертации дат формата datetime (dd-MM-YY) в даты формата OM.
+
+    Args:
+        series (pd.Series): Серия формата datetime.
+        format (str, optional): Формат результата, допустимые варианты: "Years", "Months", "Weeks", "Days". По умолчанию 'Months'.
+        start_weekday (str, optional): Название перого дня недели. По умолчанию 'Monday'.
+        max_days_in_w0 (int, optional): _Количество дней в неполной нулевой неделе, принимает значения от 0 до 6. По умолчанию 6.
+    """
     series = pd.to_datetime(series, format='%Y-%m-%d')
     if format == 'Years':
         return 'FY' + series.dt.strftime('%y')
     elif format == 'Months':
         return series.dt.strftime('%b %y')
+    elif format == 'Weeks':
+        if max_days_in_W0 > 6:
+            raise ValueError(f"Argument max_days_in_W0 can`t be more 6. Your value is {max_days_in_W0}.")
+        weekday_mapping = {'Monday': 1,
+                       'Tuesday': 2,
+                       'Wednesday': 3,
+                       'Thursday': 4,
+                       'Friday': 5,
+                       'Saturday': 6,
+                       'Sunday': 7}
+        weekday_offset = weekday_mapping[start_weekday]
+        df_weeks = pd.DataFrame()
+        df_weeks['day_num'] = series.dt.strftime("%j").apply(lambda x : int(x))
+        df_weeks['offset'] = series.apply(lambda x : x.replace(month = 1, day = 1)).dt.strftime("%w").apply(lambda x : int(x) if x != "0" else 7)
+        df_weeks['day_num+offset'] = df_weeks['day_num'] + df_weeks['offset'] - 1
+        df_weeks['week_num'] = df_weeks['day_num+offset'].apply(lambda x : (x - weekday_offset)//7)
+        if len(df_weeks[df_weeks['week_num'] == -1]) != 0:
+            df_weeks['week_num'] = df_weeks['week_num'] + 1
+        if len(df_weeks[df_weeks['week_num'] == 0]) > max_days_in_W0:
+            df_weeks['week_num'] = df_weeks['week_num'] + 1
+        df_weeks['week'] = "W" + df_weeks['week_num'].apply(str) + "_" + series.dt.strftime("%y")
+        return df_weeks['week']
     elif format == 'Days':
         return series.dt.strftime('%d %b %y').str.lstrip('0')
     else:
