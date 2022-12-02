@@ -17,9 +17,6 @@ def om_time_to_datetime(series: pd.Series, start_weekday: str = 'Monday', max_da
     if len(date_example) == 4:
         # only year
         return pd.to_datetime(series.str.lstrip('FY'), format='%y')
-    elif len(date_example) == 6:
-        # month and year
-        return pd.to_datetime(series, format='%b %y')
     elif date_example[0] == "W":
         # week and year
         if max_days_in_W0 > 6:
@@ -52,8 +49,11 @@ def om_time_to_datetime(series: pd.Series, start_weekday: str = 'Monday', max_da
         df_convert_week['offset-day_num_1'] = df_convert_week['offset'].apply(str) + "-" + df_convert_week['day_num_1'].apply(str)
         df_convert_week['day_num'] = df_convert_week['offset-day_num_1'].apply(lambda x : int(x[2:]) if int(x[:1]) == 0 and int(x[2:]) - 7 >= 0 else 1 if int(x[2:]) - 7 < 1 else int(x[2:])-7)
         df_convert_week['day year'] = df_convert_week['day_num'].apply(str) + " " + df_convert_week['om_week'].apply(lambda x : x[-2:])
-        df_convert_week['date'] = pd.to_datetime(df_convert_week['day year'], format = "%d %y")
+        df_convert_week['date'] = pd.to_datetime(df_convert_week['day year'], format = "%j %y")
         return df_convert_week['date']
+    elif len(date_example) == 6:
+        # month and year
+        return pd.to_datetime(series, format='%b %y')
     elif len(date_example) >= 8 and len(date_example) <= 9:
         # day, month and year
         return pd.to_datetime(series, format='%d %b %y')
