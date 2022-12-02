@@ -21,12 +21,15 @@ def test_om_time_to_datetime(om_time: pd.Series, start_weekday: str, max_days_in
     assert all(om_time_to_datetime(om_time, start_weekday, max_days_in_W0) == expected_result)
 
 
-@pytest.mark.parametrize("date_time, expected_result, format",
-                         [(pd.Series(datetime.date(2022,1,1)), pd.Series('FY22'), 'Years'),
-                          (pd.Series(datetime.date(2022,1,1)), pd.Series('Jan 22'), 'Months'),
-                          (pd.Series(datetime.date(2022,12,31)), pd.Series('31 Dec 22'), 'Days')])
-def test_datetime_to_om_time(date_time: pd.Series, expected_result: pd.Series, format: str):
-    assert all(datetime_to_om_time(date_time, format) == expected_result)
+@pytest.mark.parametrize("date_time, start_weekday, max_days_in_W0, format, expected_result",
+                         [(pd.Series(datetime.date(2022,1,1)), 'Monday', 6, 'Years', pd.Series('FY22')),
+                          (pd.Series(datetime.date(2022,1,1)), 'Monday', 6, 'Months', pd.Series('Jan 22')),
+                          (pd.Series(datetime.date(2022,12,31)), 'Monday', 6, 'Days', pd.Series('31 Dec 22')),
+                          (pd.Series(datetime.date(2022,1,1)), 'Monday', 6, 'Weeks', pd.Series('W0_22')),
+                          (pd.Series(datetime.date(2022,1,4)), 'Monday', 6, 'Weeks', pd.Series('W1_22')),
+                          (pd.Series(datetime.date(2022,1,1)), 'Monday', 0, 'Weeks', pd.Series('W1_22'))])
+def test_datetime_to_om_time(date_time: pd.Series, start_weekday: str, max_days_in_W0: int, format: str, expected_result: pd.Series):
+    assert all(datetime_to_om_time(date_time, format, start_weekday, max_days_in_W0) == expected_result)
     
     
 @pytest.mark.parametrize("path, sep, encoding, expected_result",
