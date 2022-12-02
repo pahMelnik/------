@@ -5,17 +5,19 @@
 Функция предназначена для конвертацмм серии из системных измерений времени Optimacros в даты формата datetime
 
 ```py
-om_time_to_datetime(series: pd.Series)
+om_time_to_datetime(series: pd.Series, start_weekday: str = 'Monday', max_days_in_W0: int = 6)
 ```
 
 - `series` - серия в формате om_time ('FY22', 'Jan 21', '21 Jan 22' и т.д.), которая будет конвертированна в формат `YYYY-MM-DD`
+- `start_weekday` (str, optional): Название перого дня недели. По умолчанию 'Monday'.
+- `max_days_in_W0` (int, optional): Количество дней в неполной нулевой неделе, принимает значения от 0 до 6. По умолчанию 6.
 
 ## datetime_to_om_time
 
 Функция предназначена для конвертации серии фомата datetime к системным измерениям времени в Optimacros
 
 ```py
-datetime_to_om_time(series: pd.Series, format: str = 'Months')
+datetime_to_om_time(series: pd.Series, format: str = 'Months', start_weekday: str = 'Monday', max_days_in_W0: int = 6)
 ```
 
 - `series` - серия в формате datetime, которая будет коныертированна
@@ -24,6 +26,9 @@ datetime_to_om_time(series: pd.Series, format: str = 'Months')
   - `Years` -  `2022-01-21` → `FY22`
   - `Months` - `2022-01-21` → `Jan 22`
   - `Days` - `2022-01-21` → `21 Jan 22`
+  - `Weeks` - `2022-01-21`, `Monday`, `6` → `W5_22`
+- `start_weekday` (str, optional): Название перого дня недели. По умолчанию 'Monday'.
+- `max_days_in_w0` (int, optional): _Количество дней в неполной нулевой неделе, принимает значения от 0 до 6. По умолчанию 6.
 
 ## dataframes_to_om_csv
 
