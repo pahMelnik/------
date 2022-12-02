@@ -10,12 +10,15 @@ import csv
 import numpy as np
 
 
-@pytest.mark.parametrize("om_time, expected_result",
-                         [(pd.Series('FY22'), pd.Series(datetime.date(2022,1,1))),
-                          (pd.Series('Jan 22'), pd.Series(datetime.date(2022,1,1))),
-                          (pd.Series('31 Dec 22'), pd.Series(datetime.date(2022,12,31)))])
-def test_om_time_to_datetime(om_time: pd.Series, expected_result: pd.Series):
-    assert all(om_time_to_datetime(om_time) == expected_result)
+@pytest.mark.parametrize("om_time, start_weekday, max_days_in_W0, expected_result",
+                         [(pd.Series('FY22'), "Monday", 6, pd.Series(datetime.date(2022,1,1))),
+                          (pd.Series('Jan 22'), "Monday", 6, pd.Series(datetime.date(2022,1,1))),
+                          (pd.Series('31 Dec 22'), "Monday", 6, pd.Series(datetime.date(2022,12,31))),
+                          (pd.Series('W0_22'), "Monday", 6, pd.Series(datetime.date(2022,1,1))),
+                          (pd.Series('W1_22'), "Monday", 6, pd.Series(datetime.date(2022,1,3))),
+                          (pd.Series('W1_22'), "Monday", 0, pd.Series(datetime.date(2022,1,1)))])
+def test_om_time_to_datetime(om_time: pd.Series, start_weekday: str, max_days_in_W0: int, expected_result: pd.Series):
+    assert all(om_time_to_datetime(om_time, start_weekday, max_days_in_W0) == expected_result)
 
 
 @pytest.mark.parametrize("date_time, expected_result, format",
