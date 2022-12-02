@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from typing import NoReturn
-
+import datetime
 
 
 def om_time_to_datetime(series: pd.Series, start_weekday: str = 'Monday', max_days_in_W0: int = 6) -> pd.Series:
@@ -38,10 +38,10 @@ def om_time_to_datetime(series: pd.Series, start_weekday: str = 'Monday', max_da
         # Определение коичества дней в нелоных неделях по годам
         first_weeks = pd.DataFrame()
         first_weeks['date'] = pd.Series([datetime.datetime.strptime(f"{day} {year}", "%d %y") for year in df_convert_week['Year'].unique() for day in range(1,8)])
-        first_weeks['om_week'] = datetime_to_om_time(first_week['date'], "Weeks", start_weekday, max_days_in_W0)
-        first_weeks['Year'] = first_week['om_week'].apply(lambda x : x[-2:])
-        first_weeks['count_W0'] = first_week['om_week'].apply(lambda x : 1 if x[:2] == "W0" else 0)
-        W0 = first_week.groupby('Year').sum()
+        first_weeks['om_week'] = datetime_to_om_time(first_weeks['date'], "Weeks", start_weekday, max_days_in_W0)
+        first_weeks['Year'] = first_weeks['om_week'].apply(lambda x : x[-2:])
+        first_weeks['count_W0'] = first_weeks['om_week'].apply(lambda x : 1 if x[:2] == "W0" else 0)
+        W0 = first_weeks.groupby('Year').sum()
         df_convert_week['count_W0'] = df_convert_week['om_week'].apply(lambda x : W0.loc[x[-2:], 'count_W0'])
         
         df_convert_week['first_start_weekday'] = str(weekday_mapping[start_weekday]) + " 01 " + df_convert_week['om_week'].apply(lambda x : x[-2:])
